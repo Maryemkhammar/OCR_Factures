@@ -109,7 +109,7 @@ def afficher_etapes(steps: dict, selectbox_key: str):
         with col:
             st.caption(label)
             st.image(img, use_container_width=True)
-
+            
 
 #  MODE IMAGE
 

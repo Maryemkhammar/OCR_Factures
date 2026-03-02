@@ -10,8 +10,8 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tessera
 # SUPPRESSION DES COULEURS (STYLO BLEU/ROUGE) 
 def clean_color_ink_hybrid(image_color,
                            thr_blue=10,      # 15-25 (plus bas = plus de bleu clair)
-                           thr_red=20,       # 20-45 (plus bas = plus permissif)
-                           sat_min=20,       # 20-40 
+                           thr_red=37,       # 20-45 (plus bas = plus permissif)
+                           sat_min=30,       # 20-40 
                            val_min=25,       # protège du bruit sombre
                            dilate_iter=2,
                            inpaint_radius=2):
