@@ -110,12 +110,6 @@ def afficher_etapes(steps: dict, selectbox_key: str):
             st.caption(label)
             st.image(img, use_container_width=True)
 
-    # Agrandissement dans la page
-    st.markdown("&nbsp;")
-    choix = st.selectbox("🔍 Agrandir une étape", list(steps.keys()), key=selectbox_key)
-    st.image(steps[choix], use_container_width=True)
-
-
 
 #  MODE IMAGE
 
