@@ -31,8 +31,8 @@ def clean_color_ink_hybrid(image_color,
     # Filtre "pixels colorés" (évite texte noir)
     mask_hsv = cv2.inRange(hsv, (0, sat_min, val_min), (180, 255, 255))
 
-    # IMPORTANT: capter le magenta/rose 
-    # Hue magenta ~ [135..170] 
+    #  le magenta/rose 
+    # Hue magenta  [135..170] 
     mask_magenta = cv2.inRange(hsv, (125, sat_min, val_min), (180, 255, 255))
 
     # Combine
@@ -50,7 +50,37 @@ def clean_color_ink_hybrid(image_color,
     result = cv2.inpaint(image_color, final_mask, inpaint_radius, cv2.INPAINT_TELEA)
     return result
 
-#___deskwing DÉTECTION ET CROP DE LA ZONE CONTENU
+#DESKEW 
+
+def deskew_image(image_color:np.ndarray) ->np.ndarray:
+    gray=cv2.cvtColor(image_color,cv2.COLOR_BGR2GRAY)
+    edges=cv2.Canny(gray, 50 , 150 , apertureSize=3)
+    lines=cv2.HoughLinesP(edges, 1 , np.pi/180 ,
+                          threshold=100,
+                          minLineLength=100,
+                          maxLineGap=10)
+    if lines is None:
+        return image_color
+    
+    angles=[]
+    for x1,y1,x2,y2 in lines[:, 0]:
+        if abs(x2-x1) > 0:
+            angle=np.degrees(np.arctan2(y2 - y1 , x2 -x1))
+            if -45 < angle < 45:
+                angles.append(angle)
+    if not angles:
+        return image_color
+    
+    angle=np.median(angles)
+    if abs(angle) < 0.5:
+        return image_color
+    h,w=image_color.shape[:2]
+    M  = cv2.getRotationMatrix2D((w // 2 , h //2), angle, 1.0)
+    return cv2.warpAffine(image_color,M,(w,h),
+                          flags=cv2.INTER_CUBIC,
+                          borderMode=cv2.BORDER_REPLICATE)
+
+#__DÉTECTION ET CROP DE LA ZONE CONTENU
 def detect_content_zone(image_color: np.ndarray) -> np.ndarray:
 
     gray = cv2.cvtColor(image_color, cv2.COLOR_BGR2GRAY)
@@ -70,7 +100,7 @@ def detect_content_zone(image_color: np.ndarray) -> np.ndarray:
     contours, _ = cv2.findContours(connected, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     if not contours:
-        return image_color  # fallback : retourne l'image entière
+        return image_color  
 
     best = None
     best_score = -1
@@ -79,11 +109,11 @@ def detect_content_zone(image_color: np.ndarray) -> np.ndarray:
         x, y, w, h = cv2.boundingRect(c)
         area = w * h
 
-        if area < 0.08 * W * H:
+        if area < 0.05 * W * H:
             continue
-        if w < 0.55 * W:
+        if w < 0.35 * W:
             continue
-        if h < 0.35 * H:
+        if h < 0.20 * H:
             continue
 
         fill_ratio = cv2.contourArea(c) / (area + 1e-6)
@@ -107,11 +137,10 @@ def preprocess_image(img: Image.Image) -> np.ndarray:
     Pipeline OCR  :
     1. Conversion PIL → OpenCV
     2. Suppression stylo
-    3. Gris
-    4. Deskew
-    5. Crop
-    6. Débruitage
-    7. Binarisation
+    3.Deskew
+    4. Crop zone contenu
+    5. gris + Débruitage
+    6. Binarisation
     """
 
     # 1️ PIL → OpenCV BGR
@@ -120,15 +149,20 @@ def preprocess_image(img: Image.Image) -> np.ndarray:
     # 2️ Suppression traces stylo (bleu / rouge/sature)
     image_color=clean_color_ink_hybrid(image_color)
     
+    #3. deskew 
+    image_color=deskew_image(image_color)
+    
+    #4. crop
+    image_color=detect_content_zone(image_color)
+    
 
-    # 3️ Conversion en gris
+    # 5. Conversion en gris
     gray = cv2.cvtColor(image_color, cv2.COLOR_BGR2GRAY)
 
-    # 4️ Deskew
-    image_color_cropped=detect_content_zone(image_color)
-    gray=cv2.cvtColor(image_color_cropped, cv2.COLOR_BGR2GRAY)
+    
    
-    # 5 Débruitage
+    # 5 gris+ Débruitage
+    gray=cv2.cvtColor(image_color,cv2.COLOR_BGR2GRAY)
     gray = cv2.medianBlur(gray, 3)
 
     # 7️ Binarisation finale
@@ -215,14 +249,19 @@ def preprocess_image_steps(img :Image.Image) -> dict:
     #1 PIL -> bgr 
     image_color=cv2.cvtColor(np.array(img.convert("RGB")), cv2.COLOR_RGB2BGR)
     steps["1.Original"] = cv2.cvtColor(image_color , cv2.COLOR_BGR2RGB)
-    #SUPPRESSION STYLO
+    
+    #2 SUPPRESSION STYLO
     image_color= clean_color_ink_hybrid(image_color)
     steps["2. Supression stylooo"]= cv2.cvtColor(image_color , cv2.COLOR_BGR2RGB)
     
-    #CROP
+    #3 deskew 
+    image_color=deskew_image(image_color)
+    steps["3.Deskew"] = cv2.cvtColor(image_color , cv2.COLOR_BGR2RGB)
     
+    #4 crop zone 
     image_color=detect_content_zone(image_color)
-    steps["3.Crop intelligent"] = cv2.cvtColor(image_color , cv2.COLOR_BGR2RGB)
+    steps["4. crop zone contenu"] = cv2.cvtColor(image_color , cv2.COLOR_BGR2RGB)
+    
     
     # 4 gris + debruitage
     gray= cv2.cvtColor(image_color , cv2.COLOR_BGR2GRAY)

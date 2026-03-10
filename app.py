@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 from PIL import Image
 from pdf2image import convert_from_path
+from utils.style_loader import load_css
 
 from ocr.ocr_engine import (
     ocr_pdf,
@@ -28,51 +29,7 @@ st.set_page_config(
     layout="wide"
 )
 
-
-#  CSS
-
-st.markdown("""
-<style>
-    .stApp { background-color: #F8FAFC; }
-
-    .main-header {
-        background: linear-gradient(135deg, #0D1B2A 0%, #1B4F72 100%);
-        padding: 22px 30px;
-        border-radius: 14px;
-        margin-bottom: 25px;
-        border-left: 6px solid #06B6D4;
-    }
-    .main-header h1 { color: white; margin: 0; font-size: 1.9rem; }
-    .main-header p  { color: #94D2E6; margin: 6px 0 0 0; font-size: 0.95rem; }
-
-    .page-card {
-        background: white;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 16px 20px;
-        margin-bottom: 18px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-
-    .badge {
-        background: #DBEAFE;
-        color: #1E40AF;
-        padding: 3px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-
-    .stButton > button { border-radius: 8px; font-weight: 600; }
-
-    section[data-testid="stSidebar"] { background: #0D1B2A !important; }
-    section[data-testid="stSidebar"] * { color: white !important; }
-    section[data-testid="stSidebar"] .stRadio label { color: #94D2E6 !important; }
-</style>
-""", unsafe_allow_html=True)
-
-
-#  EN-TÊTE
+load_css()
 
 st.markdown("""
 <div class="main-header">
