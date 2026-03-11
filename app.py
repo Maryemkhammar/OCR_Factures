@@ -8,8 +8,13 @@ from ocr.ocr_engine import (
     ocr_pdf,
     ocr_image,
     ocr_image_with_confidence,
+    
+    
+)
+from ocr.preprocessor import (
     preprocess_image,
     preprocess_image_steps
+    
 )
 from utils.file_manager import (
     load_image_from_upload,
